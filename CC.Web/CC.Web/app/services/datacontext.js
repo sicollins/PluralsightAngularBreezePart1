@@ -21,7 +21,7 @@
             speaker: 'Person',
             room: 'Room',
             track: 'Track',
-            timeslot: 'Timeslot'
+            timeslot: 'TimeSlot'
         };
 
         var service = {
@@ -50,7 +50,6 @@
         }
 
         function getSpeakerPartials() {
-
             var speakerOrderBy = 'firstName, lastName';
             var speakers = [];
 
@@ -62,11 +61,10 @@
                 .then(querySucceeded).catch(_queryFailed);
 
             function querySucceeded(data) {
-                speakers = data.result;
+                speakers = data.results;
                 log('Retrieved [Speaker Partials] from remote data source', speakers.length, true);
                 return speakers;
             }
-
         }
 
         function getSessionPartials() {
@@ -107,7 +105,7 @@
                 var types = metadatastore.getEntityTypes();
                 types.forEach(function(type) {
                     if (type instanceof breeze.EntityType) {
-                        Set(type.shortName, type);
+                        set(type.shortName, type);
                     }
                 });
 
@@ -127,7 +125,7 @@
             service.lookupCAchedData = {
                 rooms: _getAllLocal(entityNames.room, 'name'),
                 tracks: _getAllLocal(entityNames.track, 'name'),
-                timeslots: _getAllLocal(entityNames.timeslot, 'name')
+                timeslots: _getAllLocal(entityNames.timeslot, 'start')
             };
         }
 
