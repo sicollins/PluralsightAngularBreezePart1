@@ -78,7 +78,7 @@
                 .orderBy(orderBy)
                 .toType('Session')
                 .using(manager).execute()
-                .to$q(querySucceeded, _queryFailed);
+                .then(querySucceeded).catch(_queryFailed);
 
             function querySucceeded(data) {
                 sessions = data.results;
@@ -93,7 +93,7 @@
 
             primePromise = $q.all([getLookups(), getSpeakerPartials()])
                 .then(extendMetaData)
-                .then(susccess);
+                .then(success);
 
             return primePromise;
 
