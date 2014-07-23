@@ -29,7 +29,8 @@ namespace CC.Web.Controllers
         [HttpGet]
         public IQueryable<Session> Sessions()
         {
-            return _repository.Sessions;
+            var s = _repository.Sessions;
+            return s;
         }
 
         [HttpGet]

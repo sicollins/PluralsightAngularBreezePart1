@@ -17,9 +17,9 @@
     ]);
     
     // Handle routing errors and success events
-    app.run(['$route', 'breeze',
-        function ($route, breeze) {
+    app.run(['$route',
+        function ($route) {
             // Include $route to kick start the router.
-            //breeze.core.extendQ($rootScope, $q)
+            
         }]);        
 })();

@@ -46,22 +46,20 @@
                 .orderBy(orderBy)
                 .toType('Session')
                 .using(manager).execute()
-                .then(querySucceeded).catch(queryFailed);
+                .then(querySucceeded).catch(_queryFailed);
 
             function querySucceeded(data) {
                 sessions = data.result;
-                log('Retrieved [Session Partials] from remote data source');
+                log('Retrieved [Session Partials] from remote data source', sessions.length, true);
                 return sessions;
             }
-
-            function queryFailed(error) {
-                var msg = config.appErrorPrefix = 'Error retrieveing data.' + error.message;
-                logError(msg, error);
-                throw error;
-            }
-
         }
 
+        function _queryFailed(error) {
+            var msg = config.appErrorPrefix = 'Error retrieveing data.' + error.message;
+            logError(msg, error);
+            throw error;
+        }
         
     }
 })();
