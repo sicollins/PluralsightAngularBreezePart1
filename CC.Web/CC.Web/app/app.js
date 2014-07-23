@@ -20,8 +20,7 @@
     app.run(['$route', 'datacontext', 'routemediator',
         function ($route, datacontext, routemediator) {
             // Include $route to kick start the router.
-
-            datacontext.prime();
+            
             routemediator.setRoutingHandlers();
         }]);        
 })();
