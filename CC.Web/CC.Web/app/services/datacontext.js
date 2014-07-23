@@ -12,13 +12,21 @@
         var logError = getLogFn(serviceId, 'error');
         var logSuccess = getLogFn(serviceId, 'success');
         var manager = emFactory.newManager();
-        var $q = common.$q;
         var primePromise;
+        var $q = common.$q;
+
+        var storeMeta = {
+            isLoaded: {
+                sessions: false,
+                attendees: false
+            }
+        };
 
         var entityNames = {
             attendee: 'Person',
             person: 'Person',
             speaker: 'Person',
+            session: 'Session',
             room: 'Room',
             track: 'Track',
             timeslot: 'TimeSlot'
@@ -28,7 +36,8 @@
             getPeople: getPeople,
             getMessageCount: getMessageCount,
             getSessionPartials: getSessionPartials,
-            getSpeakersPartials: getSpeakerPartials,
+            getSpeakerPartials: getSpeakerPartials,
+            getAttendees: getAttendees,
             prime: prime
         };
 
@@ -49,6 +58,24 @@
             return $q.when(people);
         }
 
+        function getAttendees() {
+            var orderBy = 'firstName, lastName';
+            var attendees = [];
+
+            return EntityQuery.from('Persons')
+                .select('id, firstName, lastName, imageSource')
+                .orderBy(orderBy)
+                .toType('Person')
+                .using(manager).execute()
+                .then(querySucceeded).catch(_queryFailed);
+
+            function querySucceeded(data) {
+                attendees = data.results;
+                log('Retrieved [Attendees] from remote data source', attendees.length, true);
+                return attendees;
+            }
+        }
+
         function getSpeakerPartials() {
             var speakerOrderBy = 'firstName, lastName';
             var speakers = [];
@@ -67,9 +94,14 @@
             }
         }
 
-        function getSessionPartials() {
+        function getSessionPartials(forceRemote) {
             var orderBy = 'timeSlotId, level, speaker.firstName';
             var sessions;
+
+            if (_areSessionsLoaded() && !forceRemote) {
+                sessions = _getAllLocal(entityNames.session, orderBy);
+                return $q.when(sessions);
+            }
 
             return EntityQuery.from('Sessions')
                 .select('id, title, code, speakerId, trackId, timeSlotId, roomId, level, tags')
@@ -80,6 +112,7 @@
 
             function querySucceeded(data) {
                 sessions = data.results;
+                _areSessionsLoaded(true);
                 log('Retrieved [Session Partials] from remote data source', sessions.length, true);
                 return sessions;
             }
@@ -122,7 +155,7 @@
 
         function setLookups() {
 
-            service.lookupCAchedData = {
+            service.lookupCachedData = {
                 rooms: _getAllLocal(entityNames.room, 'name'),
                 tracks: _getAllLocal(entityNames.track, 'name'),
                 timeslots: _getAllLocal(entityNames.timeslot, 'start')
@@ -152,6 +185,21 @@
             var msg = config.appErrorPrefix = 'Error retrieveing data.' + error.message;
             logError(msg, error);
             throw error;
+        }
+
+        function _areSessionsLoaded (value) {
+            return _areItemsLoaded('sessions', value);
+        }
+
+        function _areAttendeesLoaded(value) {
+            return _areItemsLoaded('attendees', value);
+        }
+
+        function _areItemsLoaded(key, value) {
+            if (value === undefined) {
+                return storeMeta.isLoaded[key]; // get
+            }
+            return storeMeta.isLoaded[key] = value; // set
         }
         
     }

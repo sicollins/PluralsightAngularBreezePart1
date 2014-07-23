@@ -3,7 +3,6 @@
 
     var controllerId = 'sessions';
 
-    // TODO: replace app with your module name
     angular.module('app').controller(controllerId,
         ['common', 'datacontext', sessions]);
 
@@ -12,7 +11,6 @@
         var getLogFn = common.logger.getLogFn;
         var log = getLogFn(controllerId);
 
-        vm.activate = activate;
         vm.sessions = [];
         vm.title = 'Sessions';
 
