@@ -11,6 +11,7 @@
         var getLogFn = common.logger.getLogFn;
         var log = getLogFn(controllerId);
 
+        vm.refresh = refresh;
         vm.title = 'Speakers';
         vm.speakers = [];
 
@@ -21,10 +22,12 @@
                 .then(function () { log('Activated Speakers View'); });
         }
 
-        function getSpeakers() {
-            return datacontext.getSpeakerPartials().then(function (data) {
+        function getSpeakers(forceRefresh) {
+            return datacontext.getSpeakerPartials(forceRefresh).then(function (data) {
                 return vm.speakers = data;
             });
         }
+
+        function refresh() { getSpeakers(true); }
     }
 })();

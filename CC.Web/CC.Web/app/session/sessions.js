@@ -12,6 +12,7 @@
         var log = getLogFn(controllerId);
 
         vm.sessions = [];
+        vm.refresh = refresh;
         vm.title = 'Sessions';
 
         activate();
@@ -21,10 +22,12 @@
                 .then(function () { log('Activated Sessions View'); });
         }
 
-        function getSessions() {
-            return datacontext.getSessionPartials().then(function (data) {
+        function getSessions(forceRefresh) {
+            return datacontext.getSessionPartials(forceRefresh).then(function (data) {
                 return vm.sessions = data;
             });
         }
+
+        function refresh() { getSessions(true); }
     }
 })();

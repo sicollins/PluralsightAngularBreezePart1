@@ -3,10 +3,11 @@
 
     var serviceId = 'datacontext';
     angular.module('app').factory(serviceId,
-        ['common', 'entityManagerFactory', 'config', datacontext]);
+        ['common', 'entityManagerFactory', 'config', 'model', datacontext]);
 
-    function datacontext(common, emFactory, config) {
+    function datacontext(common, emFactory, config, model) {
         var EntityQuery = breeze.EntityQuery;
+        var entityNames = model.entityNames;
         var getLogFn = common.logger.getLogFn;
         var log = getLogFn(serviceId);
         var logError = getLogFn(serviceId, 'error');
@@ -20,16 +21,6 @@
                 sessions: false,
                 attendees: false
             }
-        };
-
-        var entityNames = {
-            attendee: 'Person',
-            person: 'Person',
-            speaker: 'Person',
-            session: 'Session',
-            room: 'Room',
-            track: 'Track',
-            timeslot: 'TimeSlot'
         };
 
         var service = {
@@ -58,14 +49,20 @@
             return $q.when(people);
         }
 
-        function getAttendees() {
+        function getAttendees(forceRefresh) {
             var orderBy = 'firstName, lastName';
             var attendees = [];
+
+            if (_areAttendeesLoaded() && !forceRefresh) {
+                attendees = _getAllLocal(entityNames.attendee, orderBy);
+                _areAttendeesLoaded(true);
+                return $q.when(attendees);
+            }
 
             return EntityQuery.from('Persons')
                 .select('id, firstName, lastName, imageSource')
                 .orderBy(orderBy)
-                .toType('Person')
+                .toType(entityNames.person)
                 .using(manager).execute()
                 .then(querySucceeded).catch(_queryFailed);
 
@@ -76,29 +73,38 @@
             }
         }
 
-        function getSpeakerPartials() {
-            var speakerOrderBy = 'firstName, lastName';
+        function getSpeakerPartials(forceRefresh) {
+            var predicate = breeze.Predicate.create('isSpeaker', '==', true)
+            var speakersOrderBy = 'firstName, lastName';
             var speakers = [];
+
+            if (!forceRefresh) {
+                speakers = _getAllLocal(entityNames.speaker, speakersOrderBy, predicate);
+                return $q.when(speakers);
+            }
 
             return EntityQuery.from('Speakers')
                 .select('id, firstName, lastName, imageSource')
-                .orderBy(speakerOrderBy)
-                .toType('Person')
+                .orderBy(speakersOrderBy)
+                .toType(entityNames.speaker)
                 .using(manager).execute()
                 .then(querySucceeded).catch(_queryFailed);
 
             function querySucceeded(data) {
                 speakers = data.results;
+                for (var i = speakers.length; i--;) {
+                    speakers[i].isSpeaker = true;
+                }
                 log('Retrieved [Speaker Partials] from remote data source', speakers.length, true);
                 return speakers;
             }
         }
 
-        function getSessionPartials(forceRemote) {
+        function getSessionPartials(forceRefresh) {
             var orderBy = 'timeSlotId, level, speaker.firstName';
             var sessions;
 
-            if (_areSessionsLoaded() && !forceRemote) {
+            if (_areSessionsLoaded() && !forceRefresh) {
                 sessions = _getAllLocal(entityNames.session, orderBy);
                 return $q.when(sessions);
             }
@@ -106,7 +112,7 @@
             return EntityQuery.from('Sessions')
                 .select('id, title, code, speakerId, trackId, timeSlotId, roomId, level, tags')
                 .orderBy(orderBy)
-                .toType('Session')
+                .toType(entityNames.session)
                 .using(manager).execute()
                 .then(querySucceeded).catch(_queryFailed);
 
@@ -122,7 +128,7 @@
 
             if (primePromise) return primePromise;
 
-            primePromise = $q.all([getLookups(), getSpeakerPartials()])
+            primePromise = $q.all([getLookups(), getSpeakerPartials(true)])
                 .then(extendMetaData)
                 .then(success);
 
@@ -162,9 +168,10 @@
             };
         }
 
-        function _getAllLocal(resource, ordering) {
+        function _getAllLocal(resource, ordering, predicate) {
             return EntityQuery.from(resource)
                 .orderBy(ordering)
+                .where(predicate)
                 .using(manager)
                 .executeLocally();
         }
